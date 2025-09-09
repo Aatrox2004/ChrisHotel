@@ -11,7 +11,7 @@ if (!isset($_SESSION['booking'])) {
 $booking = $_SESSION['booking'];
 ?>
 <h2>Checkout</h2>
-<form action="../../Controller/PaymentControl.php" method="POST">
+<form action="<?php echo BASE_URL; ?>Controller/PaymentController.php" method="POST">
   <input type="hidden" name="action" value="checkout">
   <input type="hidden" name="amount" value="<?= htmlspecialchars($booking['amount']) ?>">
 

@@ -1,4 +1,4 @@
 <?php
 interface ReservationStrategy {
-    public function calculatePrice($nights);
+    public function calculatePrice($nights, $guests);
 }

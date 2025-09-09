@@ -1,10 +1,21 @@
 <?php
+require_once __DIR__ . '/../../Config.php';
 ob_start();
+session_start();
+
+$timeout_duration = 900;
+if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY']) > $timeout_duration) {
+    session_unset();
+    session_destroy();
+    header("Location: " . BASE_URL . "index.php?url=User/Login&message=SessionExpired");
+    exit();
+}
+$_SESSION['LAST_ACTIVITY'] = time();
+
 date_default_timezone_set('Asia/Singapore');
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-session_start();
 
 require_once '../Entity/ReservationEntity.php';
 require_once './SingleReservation.php';
@@ -15,6 +26,22 @@ function sanitizeInput($data) {
     return htmlspecialchars(stripslashes(trim($data)));
 }
 
+function validateReservationInput($name, $checkin, $checkout, $guests) {
+    if (!preg_match("/^[a-zA-Z\s]+$/", $name)) {
+        return "Invalid name format. Letters and spaces only.";
+    }
+    if (!filter_var($guests, FILTER_VALIDATE_INT) || $guests < 1 || $guests > 5) {
+        return "Invalid number of guests.";
+    }
+    if (!strtotime($checkin) || !strtotime($checkout)) {
+        return "Invalid date format.";
+    }
+    if (strtotime($checkin) >= strtotime($checkout)) {
+        return "Check-out date must be after check-in date.";
+    }
+    return null;
+}
+
 error_log("Received POST at " . date('Y-m-d H:i:s') . ": " . print_r($_POST, true));
 
 $name = sanitizeInput($_POST['name'] ?? '');
@@ -23,25 +50,15 @@ $checkout = sanitizeInput($_POST['checkout'] ?? '');
 $room = sanitizeInput($_POST['room'] ?? '');
 $guests = intval($_POST['guests'] ?? 0);
 
-if (empty($name) || empty($checkin) || empty($checkout) || $guests < 1) {
-    error_log("Invalid input at " . date('Y-m-d H:i:s') . ": name=$name, checkin=$checkin, checkout=$checkout, guests=$guests");
-    die("Invalid input. Please check your details.");
+$error = validateReservationInput($name, $checkin, $checkout, $guests);
+if ($error) {
+    error_log("Validation error: " . $error);
+    die($error);
 }
 
-try {
-    $checkinDate = new DateTime($checkin);
-    $checkoutDate = new DateTime($checkout);
-} catch (Exception $e) {
-    error_log("DateTime error at " . date('Y-m-d H:i:s') . ": " . $e->getMessage());
-    die("Invalid date format.");
-}
-
-$interval = $checkinDate->diff($checkoutDate);
-$nights = $interval->days;
-if ($nights <= 0) {
-    error_log("Invalid date range at " . date('Y-m-d H:i:s') . ": checkin=$checkin, checkout=$checkout");
-    die("Check-out date must be after check-in date.");
-}
+$checkinDate = new DateTime($checkin);
+$checkoutDate = new DateTime($checkout);
+$nights = $checkinDate->diff($checkoutDate)->days;
 
 if ($guests === 1) {
     $strategy = new SingleReservation();
@@ -51,10 +68,11 @@ if ($guests === 1) {
     $strategy = new GroupReservation();
 }
 
-$totalPrice = $strategy->calculatePrice($nights);
+$totalPrice = $strategy->calculatePrice($nights, $guests);
 
 $reservation = new ReservationEntity($name, $checkin, $checkout, $guests, $totalPrice);
-$booking = [
+
+$_SESSION['booking'] = [
     'name' => $name,
     'checkin' => $checkin,
     'checkout' => $checkout,
@@ -63,13 +81,11 @@ $booking = [
     'nights' => $nights,
     'total' => $totalPrice
 ];
-
-$_SESSION['booking'] = $booking;
 $_SESSION['total'] = round($totalPrice, 2);
 
-error_log("Session data set at " . date('Y-m-d H:i:s') . ": " . print_r($_SESSION, true));
-error_log("Redirecting to ../Payment.php at " . date('Y-m-d H:i:s'));
+error_log("Session data set: " . print_r($_SESSION, true));
 
-ob_end_flush();
-header("Location: ../Payment.php");
+ob_clean();
+header("Location: " . BASE_URL . "index.php?url=Payment");
 exit();
+?>

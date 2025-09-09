@@ -2,9 +2,9 @@
 require_once 'ReservationStrategy.php';
 
 class SingleReservation implements ReservationStrategy {
-    private $ratePerNight = 100; // You can adjust this value
+    private $ratePerNight = 100;
 
-    public function calculatePrice($nights) {
-        return $nights * $this->ratePerNight;
+    public function calculatePrice($nights, $guests) {
+        return $nights * $this->ratePerNight; // guests always 1
     }
 }

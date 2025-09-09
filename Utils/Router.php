@@ -1,11 +1,11 @@
 <?php
 class Router {
-    public function route() {
-        $url = isset($_GET['url']) ? explode('/', trim($_GET['url'], '/')) : ['home'];
+    public function Route() {
+        $url = isset($_GET['url']) ? explode('/', trim($_GET['url'], '/')) : ['Home'];
         $controllerName = ucfirst(array_shift($url)) . 'Controller';
-        $action = !empty($url) ? array_shift($url) : 'index';
+        $action = !empty($url) ? array_shift($url) : 'Index';
 
-        $controllerFile = "controllers/$controllerName.php";
+        $controllerFile = __DIR__ . '/../Controller/' . $controllerName . '.php';
         if (!file_exists($controllerFile)) {
             die("Controller $controllerName not found");
         }
@@ -16,12 +16,9 @@ class Router {
             die("Action $action not found in $controllerName");
         }
 
-        // If there are remaining parts in the URL, pass them as arguments to the controller action
         if (!empty($url)) {
-            // Call the controller action with arguments
             call_user_func_array([$controller, $action], $url);
         } else {
-            // Call the controller action without arguments
             $controller->$action();
         }
     }
