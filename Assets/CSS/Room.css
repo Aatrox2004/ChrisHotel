@@ -1,0 +1,263 @@
+/* Assets/CSS/Room.css */
+
+/* Rooms Section (Room&Suite.php) */
+.rooms-section {
+  padding: 4rem 2rem;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.room-card {
+  display: flex;
+  flex-direction: row;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.room-card:hover {
+  transform: translateY(-5px);
+}
+
+.room-card.reverse {
+  flex-direction: row-reverse;
+}
+
+.room-img {
+  flex: 1;
+  max-width: 50%;
+}
+
+.room-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.room-info {
+  flex: 1;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.room-info h2 {
+  font-size: 2em;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.room-info p {
+  font-size: 1em;
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.room-features {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 1.5rem;
+}
+
+.room-features li {
+  font-size: 0.9em;
+  color: #555;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.room-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-read,
+.btn-book {
+  padding: 10px 20px;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+}
+
+.btn-read {
+  background-color: #e9c46a;
+}
+
+.btn-book {
+  background-color: #2a9d8f;
+}
+
+/* Room Details (StandardDetails.php and DeluxeDetails.php) */
+.room-detail {
+  padding: 4rem 2rem;
+  max-width: 1200px;
+  margin: auto;
+}
+
+.room-title-info h1 {
+  font-size: 2.5em;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.room-specs {
+  font-size: 1.1em;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.room-specs span {
+  margin-right: 1rem;
+}
+
+.room-desc {
+  font-size: 1em;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.room-amenities h2 {
+  font-size: 1.8em;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.amenities-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.amenities-list li {
+  font-size: 0.9em;
+  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.room-buttons .btn {
+  padding: 10px 20px;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: bold;
+  color: white;
+  margin-right: 1rem;
+}
+
+.room-buttons .btn-book {
+  background-color: #2a9d8f;
+}
+
+.room-buttons .btn-back {
+  background-color: #6c757d;
+}
+
+.related-rooms {
+  margin-top: 3rem;
+}
+
+.related-rooms h2 {
+  font-size: 1.8em;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.related-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.related-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.related-info {
+  padding: 1rem;
+}
+
+.related-info h3 {
+  font-size: 1.5em;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.related-info p {
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.btn-small {
+  padding: 8px 15px;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: bold;
+  color: white;
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+
+.btn-small.btn-read {
+  background-color: #e9c46a;
+}
+
+.btn-small.btn-book {
+  background-color: #2a9d8f;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .room-card,
+  .room-card.reverse {
+    flex-direction: column;
+  }
+
+  .room-img {
+    max-width: 100%;
+  }
+
+  .room-info {
+    padding: 1.5rem;
+  }
+
+  .room-buttons {
+    flex-direction: column;
+  }
+
+  .btn-read,
+  .btn-book,
+  .room-buttons .btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .amenities-list {
+    grid-template-columns: 1fr;
+  }
+}
