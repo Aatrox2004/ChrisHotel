@@ -19,6 +19,46 @@ class UserProfileController {
         ];
         render(__DIR__ . '/../Views/User/UserProfile.php', $data);
     }
+
+    public function apiUser($userId) {
+        header('Content-Type: application/json');
+        try {
+            $user = UserEntity::getUser($userId);
+            if (!$user) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'User not found'
+                ]);
+                return;
+            }
+
+            echo json_encode([
+                'success' => true,
+                'data' => $user
+            ]);
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'DB error: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function apiAdmins() {
+        header('Content-Type: application/json');
+        try {
+            $admins = UserEntity::getAdmin();
+            echo json_encode([
+                'success' => true,
+                'data' => $admins
+            ]);
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'DB error: ' . $e->getMessage()
+            ]);
+        }
+    }
 }
 
 // Handle routing

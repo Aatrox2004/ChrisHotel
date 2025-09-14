@@ -1,43 +1,32 @@
 <?php
+require_once __DIR__ . '/../../DBConnect.php';
 class ReservationEntity {
     private $reservationId;
-    private $custName;
+    private $userId;
     private $roomId;
     private $checkInDate;
     private $checkOutDate;
-    private $adults;
+    private $adult;
     private $children;
     private $reservationType;
-    private $price;
-    private $roomPrice; // Added to store room's base price
+    private $totalAmount;
+    public  $status;
+    private $conn;
 
-    public function __construct($custName, $checkInDate, $checkOutDate, $adults, $children, $roomPrice, $price) {
-        $this->custName = $custName;
-        $this->reservationId = uniqid('RES-');
-        $this->checkInDate = $checkInDate;
-        $this->checkOutDate = $checkOutDate;
-        $this->adults = $adults;
-        $this->children = $children;
-        $this->reservationType = $this->getTypeFromGuests($adults, $children);
-        $this->roomPrice = $roomPrice;
-        $this->price = $price;
+    public function __construct() {
+        $this->conn = Database::getInstance();
     }
 
-    public function getcustName(){return $this->custName;}
+    public function getUserId(){return $this->userId;}
     public function getReservationId(){return $this->reservationId;}
+    public function getRoomId(){return $this->roomId;}
     public function getCheckInDate(){return $this->checkInDate;}
     public function getCheckOutDate(){return $this->checkOutDate;}
-    public function getAdults(){return $this->adults;}
+    public function getAdult(){return $this->adult;}
     public function getChildren(){return $this->children;}
     public function getReservationType(){return $this->reservationType;}
-    public function getRoomPrice(){return $this->roomPrice;}
-    public function getPrice(){return $this->price;}
-    
-    public function setPrice($price)
-    {
-        $this->price = $price;
-        return $this;
-    }
+    public function getStatus(){return $this->status;}
+    public function getTotalAmount(){return $this->totalAmount;}
 
     private function getTypeFromGuests($adults, $children) {
         if ($adults == 1 && $children == 0) return "Single";
@@ -45,39 +34,45 @@ class ReservationEntity {
         return "Family";
     }
 
-    public static function create($userId, $roomId, $checkIn, $checkOut, $adults, $children, $roomPrice) {
-        global $conn;
-        $stmt = $conn->prepare("
-            INSERT INTO reservations (user_id, room_id, check_in, check_out, adults, children, room_price, status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')
+    public function create($userId, $roomId, $checkIn, $checkOut, $adult, $children, $totalAmount, $status) {
+        $this->reservationType = $this->getTypeFromGuests($adult, $children);
+        $stmt = $this->conn->prepare("
+            INSERT INTO reservations 
+            (user_id, room_id, reservationType, adult, children, check_in, check_out, total_amount, status, created_at)
+            VALUES (:user_id, :room_id, :reservationType, :adult, :children, :check_in, :check_out, :total_amount, :status, NOW())
         ");
-        $stmt->bind_param("iissiid", $userId, $roomId, $checkIn, $checkOut, $adults, $children, $roomPrice);
 
-        if ($stmt->execute()) {
-            return $stmt->insert_id;
-        }
-        return false;
+        $stmt->execute([
+            ':user_id' => $userId,
+            ':room_id' => $roomId,
+            ':reservationType' => $this->reservationType,
+            ':adult' => $adult,
+            ':children' => $children,
+            ':check_in' => $checkIn,
+            ':check_out' => $checkOut,
+            ':total_amount' => $totalAmount,
+            ':status' => $status
+        ]);
+        return $this->conn->lastInsertId();
+    }
+
+    public function selectReservation($reservationId) {
+        $stmt = $this->conn->prepare("
+            SELECT r.reservation_id AS reservationId, r.user_id AS userId, u.username AS userName,
+                   r.room_id AS roomId, rm.room_name AS roomName, rm.room_type AS roomType,
+                   r.check_in AS checkIn, r.check_out AS checkOut, r.adults, r.children,
+                   r.total_amount AS totalAmount, r.status, r.created_at AS createdAt
+            FROM reservations r
+            JOIN users u ON r.user_id = u.user_id
+            JOIN rooms rm ON r.room_id = rm.room_id
+            WHERE r.reservation_id = :reservation_id
+        ");
+        $stmt->execute([':reservation_id' => $reservationId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     public function __toString()
     {
-        return __CLASS__ . "Customer Name: {$this->custName}, Reservation ID: {$this->reservationId}, Check In Date: {$this->checkInDate}, Check Out Date: {$this->checkOutDate}, Adults: {$this->adults}, Children: {$this->children}, Room Price: {$this->roomPrice}, Total Price: {$this->price}";
-    }
-
-    public static function getAvailableRoomsViaAPI($baseUrl) {
-        $apiUrl = $baseUrl . 'index.php?url=Rooms/apiRooms';
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'POST',
-                'header' => 'Content-Type: application/json',
-                'timeout' => 10
-            ]
-        ]);
-        $response = @file_get_contents($apiUrl, false, $context);
-        if ($response === false) {
-            return [];
-        }
-        $data = json_decode($response, true);
-        return $data['success'] ? $data['data'] : [];
+        return __CLASS__ . "User ID: {$this->userId}, Reservation ID: {$this->reservationId}, Check In Date: {$this->checkInDate}, Check Out Date: {$this->checkOutDate}, Adult: {$this->adult}, Children: {$this->children}, Total Amount: {$this->totalAmount}, Total status: {$this->status}";
     }
 }

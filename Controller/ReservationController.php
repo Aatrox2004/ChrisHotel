@@ -5,6 +5,7 @@ require_once __DIR__ . '/../DBConnect.php';
 require_once __DIR__ . '/../Model/Entity/ReservationEntity.php';
 require_once __DIR__ . '/../Model/Strategies/ReservationStrategyFactory.php';
 require_once __DIR__ . '/RoomsController.php';
+require_once __DIR__ . '/LoginController.php';
 
 class ReservationController {
 
@@ -33,6 +34,15 @@ class ReservationController {
         $children      = intval($input['children'] ?? 0);
         $roomPrice     = floatval($input['room_price'] ?? 0);
 
+        if (!$name || !$checkinStr || !$checkoutStr || $roomPrice <= 0) {
+            $this->respondError("Missing or invalid reservation data", 400);
+        }
+
+        $userId = $this->getUserIdFromLoginController($name);
+        if (!$userId) {
+            $this->respondError("User not found", 404);
+        }
+
         try {
             $checkin  = new DateTime($checkinStr);
             $checkout = new DateTime($checkoutStr);
@@ -45,53 +55,80 @@ class ReservationController {
             $this->respondError("Check-out must be after check-in", 400);
         }
 
+        // Determine strategy Design Pattern
         $strategy = ReservationStrategyFactory::create($adults, $children);
         $totalPrice = $strategy->calculatePrice($nights, $adults, $children, $roomPrice);
 
+        $reservationEntity = new ReservationEntity();
+        $reservationId = $reservationEntity->create(
+            $userId,
+            $roomId,
+            $checkin->format('Y-m-d'),
+            $checkout->format('Y-m-d'),
+            $adults,
+            $children,
+            $totalPrice,
+            'Pending'
+        );
+
+        $_SESSION['booking'] = [
+            'reservation_id' => $reservationId,
+        ];
+
+        header('Location: ' . BASE_URL . 'index.php?url=Payment&reservation_id=' . $reservationId);
+        exit;
+    }
+
+    private function getUserIdFromLoginController($username) {
+        $url = BASE_URL . "index.php?url=Login/apiGetUserByName&username=" . urlencode($username);
+
+        $response = @file_get_contents($url); // suppress warning
+        if (!$response) return null;
+
+        $data = json_decode($response, true);
+        if (!is_array($data) || !isset($data['success']) || !$data['success']) {
+            return null;
+        }
+
+        return $data['data']['user_id'] ?? null;
+    }
+
+    public function apiReservation($reservationId = null) {
+        header('Content-Type: application/json');
+
         try {
-            $db = Database::getInstance();
-            $stmt = $db->prepare("
-                INSERT INTO reservations
-                (reservation_id, user_id, room_id, check_in, check_out, total_amount, status, created_at)
-                VALUES
-                (:reservation_id, :user_id, :room_id, :check_in, :check_out, :total_amount, :status, NOW())
-            ");
-            $stmt->execute([
-                ':reservation_id'  => $reservationId,
-                ':user_id'         => $name,
-                ':room_id'         => $roomId,
-                ':check_in'        => $checkin->format('Y-m-d'),
-                ':check_out'       => $checkout->format('Y-m-d'),
-                ':total_amount'    => $totalPrice,
-                ':status'          => 'Pending',
-            ]);
+            if (!$reservationId) {
+                $reservationId = $_POST['reservation_id'] ?? $_GET['reservation_id'] ?? null;
+            }
 
-            $reservationId = $db->lastInsertId();
-
-            session_start();
-            $_SESSION['booking'] = [
-                ':reservation_id'  => $reservationId,
-                ':user_id'         => $name,
-                ':room_id'         => $roomId,
-                ':check_in'        => $checkin->format('Y-m-d'),
-                ':check_out'       => $checkout->format('Y-m-d'),
-                ':total_amount'    => $totalPrice,
-                ':status'          => 'Pending',
-            ];
-            $_SESSION['total'] = round($totalPrice, 2);
-
-            if ($this->isApiRequest()) {
-                $this->respondJSON(true, "Reservation successful", $_SESSION['booking']);
-            } else {
-                header('Location: ' . BASE_URL . 'index.php?url=Payment');
+            if (!$reservationId) {
+                echo json_encode(['success' => false, 'message' => 'Reservation ID required']);
                 exit;
             }
 
+            $reservationEntity = new ReservationEntity();
+            $reservation = $reservationEntity->selectReservation($reservationId);
+
+            if (!$reservation) {
+                echo json_encode(['success' => false, 'message' => 'Reservation not found']);
+                exit;
+            }
+
+            echo json_encode([
+                'success' => true,
+                'data' => $reservation
+            ]);
+
         } catch (Exception $e) {
-            error_log('Reservation save error: ' . $e->getMessage());
-            $this->respondError("Server error while saving reservation", 500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ]);
         }
+        exit;
     }
+
+
 
     public function apiRoomsFromReservation() {
         try {

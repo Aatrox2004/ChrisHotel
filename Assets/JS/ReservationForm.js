@@ -282,6 +282,8 @@ document.addEventListener("DOMContentLoaded", () => {
       room_type: card.dataset.roomType,
       price: card.dataset.price
     };
+    hiddenRooms.value = roomData.selectedRoom.room_type;
+    roomId.value = roomData.selectedRoom.room_id;
     hiddenRoomPrice.value = roomData.selectedRoom.price;
     document.getElementById('reservation-room').value = roomData.selectedRoom.room_type;
     renderCart();
@@ -374,8 +376,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------------- Init ----------------
   hiddenAdults.value = 2;
   hiddenChildren.value = 0;
-  hiddenRooms.value = roomData.selectedRoom.room_type;
-  roomId.value = roomData.selectedRoom.room_id;
   generateCalendar();
   loadRooms();
   renderCart();

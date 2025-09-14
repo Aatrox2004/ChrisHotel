@@ -33,6 +33,9 @@ CREATE TABLE reservations (
     reservation_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     room_id INT NOT NULL,
+    reservationType ENUM('Single', 'Group', 'Family') NOT NULL,
+    adult INT NOT NULL,
+    children INT NOT NULL,
     check_in DATE NOT NULL,
     check_out DATE NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
@@ -52,10 +55,10 @@ CREATE TABLE payments (
     paid_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     refund_amount DECIMAL(10,2) DEFAULT 0.00,
     FOREIGN KEY (reservation_id) REFERENCES reservations(reservation_id) ON DELETE CASCADE
-
-    ALTER TABLE payments 
-    ADD COLUMN refund_date DATETIME NULL AFTER refund_amount;
 );
+
+ALTER TABLE payments 
+ADD COLUMN refund_date DATETIME NULL AFTER refund_amount;
 
 CREATE TABLE services (
     service_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -76,3 +79,9 @@ INSERT INTO `rooms` (`room_id`, `room_name`, `room_type`, `room_picture`, `max_o
 (2, 'Deluxe Queen Room', 'Deluxe', 'Assets/Images/room2.jpg', 5, '1 Crib & 1 King Bed', '28m²', 200.00, 'Available', 'Spacious room with a king bed and city view.', '2025-09-10 15:21:34'),
 (3, 'Family Suite', 'Family Suite', 'Assets/Images/room3.jpg', 5, '1 Crib & 1 Twin Bed', '28m²', 350.00, 'Available', 'Large suite with two bedrooms and a kitchenette.', '2025-09-10 15:21:34'),
 (4, '404', 'Standard', 'Assets/Images/room4.jpg', 5, '1 Crib & 1 King Bed', '32m²', 400.00, 'Available', 'Comfortable room with modern decor.', '2025-09-10 15:21:34');
+
+INSERT INTO users (username, password, email, phone, role)
+VALUES ('admin', 'admin', 'admin@example.com', '0123456789', 'admin');
+
+INSERT INTO users (username, password, email, phone, role)
+VALUES ('Heng Jin Hao','user', 'guest@example.com','0987654321','guest');

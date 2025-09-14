@@ -5,20 +5,42 @@ require_once __DIR__ . '/../Model/Payment/StripeAdapter.php';
 require_once __DIR__ . '/../Model/Payment/PayPalAdapter.php';
 require_once __DIR__ . '/../Utils/SecurePractices/PaymentUtils.php';
 require_once __DIR__ . '/../Utils/View.php';
+require_once __DIR__ . '/ReservationController.php';
 
 secure_session_start();
 
 class PaymentController {
     public function Index() {
-        if (!isset($_SESSION['booking'])) {
+        if (!isset($_SESSION['booking']['reservation_id'])) {
             header('Location: ' . BASE_URL . 'index.php?url=Reservation');
             exit;
         }
+
+        $reservationId = $_SESSION['booking']['reservation_id'];
+        $reservation = $this->getReservationDetails($reservationId);
+
+        if (!$reservation) {
+            $data = [
+                'page_title' => 'Payment',
+                'cssFile' => 'Payment.css',
+                'error' => 'Reservation not found.'
+            ];
+            render(__DIR__ . '/../Views/Payment/Payment.php', $data);
+            exit;
+        }
+
         $data = [
             'page_title' => 'Payment',
-            'booking' => $_SESSION['booking']
+            'cssFile' => 'Payment.css',
+            'reservation' => $reservation
         ];
+
         render(__DIR__ . '/../Views/Payment/Payment.php', $data);
+    }
+
+    private function getReservationDetails($reservationId) {
+        $reservationEntity = new ReservationEntity();
+        return $reservationEntity->selectReservation($reservationId);
     }
 
     // Handle POST actions
@@ -93,11 +115,4 @@ class PaymentController {
                 break;
         }
     }
-}
-
-// Handle routing
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    (new PaymentController())->Process();
-} else {
-    (new PaymentController())->Index();
 }
